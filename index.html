@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>IBONARIUM · SOLAR EVENTS · LIVE</title>
+<title>IBONARIUM · SOLAR EVENTS · LIST</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -10,38 +10,28 @@
 html,body{
     margin:0;
     background:#000;
-    color:#cfefff;
+    color:#d8f3ff;
     font-family: Inter, system-ui, monospace;
 }
 header{
     padding:12px;
     text-align:center;
-    border-bottom:1px solid #122;
+    border-bottom:1px solid #133;
     letter-spacing:2px;
 }
 #events{
-    padding:10px;
-    display:grid;
-    gap:12px;
+    padding:12px;
 }
 .event{
-    border:1px solid #133;
-    background:#02090d;
-    padding:10px;
+    border-bottom:1px solid #122;
+    padding:8px 0;
 }
 .time{color:#7ff}
 .type{font-weight:bold}
 .X{color:#ff4b4b}
 .M{color:#ffb347}
 .C{color:#7fff7f}
-.coord{opacity:.8}
-.instrument{opacity:.7;font-size:12px}
-img{
-    width:100%;
-    margin-top:6px;
-    border:1px solid #122;
-}
-a{color:#7ff;font-size:12px}
+.meta{opacity:.8;font-size:12px}
 footer{
     text-align:center;
     padding:8px;
@@ -54,92 +44,89 @@ footer{
 <body>
 
 <header>
-IBONARIUM :: SOLAR EVENTS :: LIVE
+IBONARIUM :: SOLAR EVENTS :: LIST
 </header>
 
 <div id="events">Завантаження…</div>
 
 <footer>
-NASA DONKI · SDO · SOHO · auto update
+NASA DONKI · list mode · auto update 15 min
 </footer>
 
 <script>
 const API_KEY = "DEMO_KEY";
 
-function iso(d){
+function isoDate(d){
     return d.toISOString().split("T")[0];
 }
 
-const end = iso(new Date());
-const start = iso(new Date(Date.now() - 7*24*3600*1000));
+// беремо останні 5 днів — стабільно
+const end = isoDate(new Date());
+const start = isoDate(new Date(Date.now() - 5*24*3600*1000));
 
-const FLARE_API =
+const FLR_URL =
 `https://api.nasa.gov/DONKI/FLR?startDate=${start}&endDate=${end}&api_key=${API_KEY}`;
 
-const CME_API =
+const CME_URL =
 `https://api.nasa.gov/DONKI/CME?startDate=${start}&endDate=${end}&api_key=${API_KEY}`;
 
 async function load(){
-    const box=document.getElementById("events");
-    box.innerHTML="";
+    const box = document.getElementById("events");
+    box.innerHTML = "";
 
     try{
-        const [flares,cmes]=await Promise.all([
-            fetch(FLARE_API).then(r=>r.json()),
-            fetch(CME_API).then(r=>r.json())
-        ]);
+        const flr = await fetch(FLR_URL).then(r=>r.json());
+        const cme = await fetch(CME_URL).then(r=>r.json());
 
-        const events=[
-            ...flares.map(e=>({...e,_type:"FL"})),
-            ...cmes.map(e=>({...e,_type:"CME"}))
+        const events = [
+            ...flr.map(e=>({...e,_type:"FL"})),
+            ...cme.map(e=>({...e,_type:"CME"}))
         ];
 
-        events.sort((a,b)=>
-            new Date(b.beginTime||b.startTime) -
-            new Date(a.beginTime||a.startTime)
-        );
+        events.sort((a,b)=>{
+            const ta = new Date(a.beginTime || a.startTime);
+            const tb = new Date(b.beginTime || b.startTime);
+            return tb - ta;
+        });
 
-        events.slice(0,10).forEach(e=>{
-            const div=document.createElement("div");
+        if(events.length===0){
+            box.innerHTML="Подій не знайдено";
+            return;
+        }
+
+        events.slice(0,20).forEach(e=>{
+            const div = document.createElement("div");
             div.className="event";
 
-            const cls=e.classType||"";
-            const clsType=cls.charAt(0);
+            const cls = e.classType || "";
+            const clsType = cls.charAt(0);
 
             const instruments = e.instruments
               ? e.instruments.map(i=>i.displayName).join(", ")
               : "NASA";
 
-            let media = `
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0171.jpg">
-                <img src="https://soho.nascom.nasa.gov/data/realtime/c2/1024/latest.jpg">
-            `;
-
-            if(e.link){
-                media += `<a href="${e.link}" target="_blank">▶ офіційна анімація події</a>`;
-            }
-
-            div.innerHTML=`
+            div.innerHTML = `
                 <div class="time">⏱ ${e.beginTime || e.startTime}</div>
                 <div class="type">
                     ☀ ${e._type}
-                    <span class="${clsType}">🔥 ${cls}</span>
+                    <span class="${clsType}">${cls}</span>
                 </div>
-                <div class="coord">📍 ${e.sourceLocation || "—"}</div>
-                <div class="instrument">🛰 ${instruments}</div>
-                ${media}
+                <div class="meta">
+                    📍 ${e.sourceLocation || "—"}<br>
+                    🛰 ${instruments}
+                </div>
             `;
             box.appendChild(div);
         });
 
     }catch(err){
-        box.innerText="Помилка отримання даних NASA";
+        box.innerText = "Помилка отримання даних NASA DONKI";
         console.error(err);
     }
 }
 
 load();
-setInterval(load,600000);
+setInterval(load, 900000); // 15 хв
 </script>
 
 </body>
