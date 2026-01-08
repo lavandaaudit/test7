@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>IBONARIUM · SOLAR EVENTS · LIST</title>
+<title>IBONARIUM · SOLAR EVENTS · LIVE</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -10,28 +10,32 @@
 html,body{
     margin:0;
     background:#000;
-    color:#d8f3ff;
+    color:#cfefff;
     font-family: Inter, system-ui, monospace;
 }
 header{
     padding:12px;
     text-align:center;
-    border-bottom:1px solid #133;
+    border-bottom:1px solid #122;
     letter-spacing:2px;
 }
 #events{
-    padding:12px;
+    padding:10px;
+    display:grid;
+    gap:12px;
 }
 .event{
-    border-bottom:1px solid #122;
-    padding:8px 0;
+    border:1px solid #133;
+    background:#02090d;
+    padding:10px;
 }
 .time{color:#7ff}
 .type{font-weight:bold}
 .X{color:#ff4b4b}
 .M{color:#ffb347}
 .C{color:#7fff7f}
-.meta{opacity:.8;font-size:12px}
+.coord{opacity:.8}
+.instrument{opacity:.7;font-size:12px}
 footer{
     text-align:center;
     padding:8px;
@@ -44,75 +48,76 @@ footer{
 <body>
 
 <header>
-IBONARIUM :: SOLAR EVENTS :: LIST
+IBONARIUM :: SOLAR EVENTS :: LIVE
 </header>
 
 <div id="events">Завантаження…</div>
 
 <footer>
-NASA DONKI · list mode · auto update 15 min
+Data: NASA DONKI · auto update 10 min
 </footer>
 
 <script>
 const API_KEY = "DEMO_KEY";
 
-function isoDate(d){
+function iso(d){
     return d.toISOString().split("T")[0];
 }
 
-// беремо останні 5 днів — стабільно
-const end = isoDate(new Date());
-const start = isoDate(new Date(Date.now() - 5*24*3600*1000));
+// останні 7 днів
+const end = iso(new Date());
+const start = iso(new Date(Date.now() - 7*24*3600*1000));
 
-const FLR_URL =
+// Flare + CME
+const FLARE_API =
 `https://api.nasa.gov/DONKI/FLR?startDate=${start}&endDate=${end}&api_key=${API_KEY}`;
 
-const CME_URL =
+const CME_API =
 `https://api.nasa.gov/DONKI/CME?startDate=${start}&endDate=${end}&api_key=${API_KEY}`;
 
 async function load(){
-    const box = document.getElementById("events");
-    box.innerHTML = "";
+    const box=document.getElementById("events");
+    box.innerHTML="";
 
     try{
-        const flr = await fetch(FLR_URL).then(r=>r.json());
-        const cme = await fetch(CME_URL).then(r=>r.json());
+        const [flares,cmes]=await Promise.all([
+            fetch(FLARE_API).then(r=>r.json()),
+            fetch(CME_API).then(r=>r.json())
+        ]);
 
-        const events = [
-            ...flr.map(e=>({...e,_type:"FL"})),
-            ...cme.map(e=>({...e,_type:"CME"}))
+        const events=[
+            ...flares.map(e=>({...e,_type:"FL"})),
+            ...cmes.map(e=>({...e,_type:"CME"}))
         ];
 
-        events.sort((a,b)=>{
-            const ta = new Date(a.beginTime || a.startTime);
-            const tb = new Date(b.beginTime || b.startTime);
-            return tb - ta;
-        });
+        events.sort((a,b)=>
+            new Date(b.beginTime||b.startTime) -
+            new Date(a.beginTime||a.startTime)
+        );
 
-        if(events.length===0){
-            box.innerHTML="Подій не знайдено";
-            return;
-        }
-
-        events.slice(0,20).forEach(e=>{
-            const div = document.createElement("div");
+        events.slice(0,12).forEach(e=>{
+            const div=document.createElement("div");
             div.className="event";
 
-            const cls = e.classType || "";
-            const clsType = cls.charAt(0);
+            const cls=e.classType || "";
+            const clsType=cls.charAt(0);
 
             const instruments = e.instruments
-              ? e.instruments.map(i=>i.displayName).join(", ")
+              ? e.instruments.map(i => i.displayName).join(", ")
               : "NASA";
 
-            div.innerHTML = `
-                <div class="time">⏱ ${e.beginTime || e.startTime}</div>
+            div.innerHTML=`
+                <div class="time">
+                    ⏱ ${e.beginTime || e.startTime}
+                </div>
                 <div class="type">
                     ☀ ${e._type}
-                    <span class="${clsType}">${cls}</span>
+                    <span class="${clsType}">🔥 ${cls}</span>
                 </div>
-                <div class="meta">
-                    📍 ${e.sourceLocation || "—"}<br>
+                <div class="coord">
+                    📍 ${e.sourceLocation || "—"}
+                </div>
+                <div class="instrument">
                     🛰 ${instruments}
                 </div>
             `;
@@ -120,13 +125,13 @@ async function load(){
         });
 
     }catch(err){
-        box.innerText = "Помилка отримання даних NASA DONKI";
+        box.innerText="Помилка отримання даних NASA DONKI";
         console.error(err);
     }
 }
 
 load();
-setInterval(load, 900000); // 15 хв
+setInterval(load,600000); // 10 хв
 </script>
 
 </body>
