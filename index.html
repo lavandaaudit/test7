@@ -1,190 +1,118 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ibonarium Cosmo Dynamics LAB LIVE</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            color: #e0e0e0;
-            font-family: Arial, sans-serif;
-            min-height: 100vh;
-            overflow: hidden; /* Без скролу */
-            position: relative;
-        }
+<meta charset="UTF-8">
+<title>IBONARIUM · SOLAR EVENTS · LIVE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        /* Анімація зірок — повільний рух на глядача (3 шари) */
-        .stars {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-repeat: repeat;
-            background-size: auto;
-        }
-
-        #stars1 {
-            background-image: url('https://raw.githubusercontent.com/parallax-stars/layer1.png/main/stars1.png'); /* Дрібні далекі зірки */
-            animation: moveStars 300s linear infinite;
-            opacity: 0.8;
-        }
-        #stars2 {
-            background-image: url('https://raw.githubusercontent.com/parallax-stars/layer2.png/main/stars2.png'); /* Середні зірки */
-            animation: moveStars 400s linear infinite;
-            opacity: 0.7;
-        }
-        #stars3 {
-            background-image: url('https://raw.githubusercontent.com/parallax-stars/layer3.png/main/stars3.png'); /* Ближчі яскраві зірки */
-            animation: moveStars 500s linear infinite;
-            opacity: 0.6;
-        }
-
-        @keyframes moveStars {
-            from { background-position: 0 0; }
-            to { background-position: -10000px -10000px; } /* Діагональний рух для ефекту глибини */
-        }
-
-        .container {
-            position: relative;
-            z-index: 10;
-            max-width: 1400px;
-            margin: 20px auto;
-            padding: 10px;
-            text-align: center;
-        }
-
-        h1 {
-            color: #ffcc00;
-            font-size: 2em;
-            margin: 20px 0;
-            text-shadow: 0 0 12px #ffcc00;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        h1:hover {
-            text-shadow: 0 0 20px #ffcc00;
-            transform: scale(1.05);
-        }
-
-        /* Два ряди — адаптивно */
-        .row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        /* Всі блоки однакового розміру */
-        .block {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            overflow: hidden;
-            border-radius: 12px;
-            box-shadow: 0 0 20px rgba(255, 204, 0, 0.6);
-        }
-
-        .block img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* Червоний відтінок для C2 */
-        .red-gif img {
-            filter: hue-rotate(0deg) saturate(1.5) brightness(1.1);
-        }
-
-        /* Синій відтінок для C3 */
-        .blue-gif img {
-            filter: hue-rotate(200deg) saturate(1.5) brightness(1.1);
-        }
-
-        /* Золотиста рамка для фото SDO */
-        .sdo-photo {
-            border: 3px solid #ffcc00;
-        }
-
-        .note {
-            font-size: 0.85em;
-            color: #aaa;
-            margin: 10px 0;
-        }
-
-        /* Адаптивність */
-        @media (max-width: 1024px) {
-            .row { grid-template-columns: repeat(2, 1fr); }
-            h1 { font-size: 1.8em; }
-        }
-        @media (max-width: 768px) {
-            .row { grid-template-columns: 1fr 1fr; gap: 8px; }
-            h1 { font-size: 1.6em; }
-        }
-        @media (max-width: 480px) {
-            .row { grid-template-columns: 1fr; }
-            h1 { font-size: 1.4em; }
-        }
-    </style>
+<style>
+*{box-sizing:border-box}
+html,body{
+    margin:0;
+    background:#000;
+    color:#bfefff;
+    font-family: Inter, system-ui, monospace;
+}
+header{
+    padding:12px;
+    text-align:center;
+    border-bottom:1px solid #122;
+    letter-spacing:2px;
+}
+#events{
+    padding:10px;
+    display:grid;
+    gap:12px;
+}
+.event{
+    border:1px solid #133;
+    background:#02090d;
+    padding:10px;
+}
+.time{color:#7ff}
+.type{font-weight:bold}
+.X{color:#ff4b4b}
+.M{color:#ffb347}
+.C{color:#7fff7f}
+.coord{opacity:.8}
+.instrument{opacity:.7;font-size:12px}
+video{
+    width:100%;
+    margin-top:6px;
+    border:1px solid #122;
+}
+footer{
+    text-align:center;
+    padding:8px;
+    font-size:11px;
+    opacity:.5;
+}
+</style>
 </head>
+
 <body>
 
-    <!-- Новий чистий фон зірок (без написів) -->
-    <div class="stars" id="stars1"></div>
-    <div class="stars" id="stars2"></div>
-    <div class="stars" id="stars3"></div>
+<header>
+IBONARIUM :: SOLAR EVENTS :: LIVE
+</header>
 
-    <div class="container">
-        <h1 onclick="window.open('https://t.me/ibonariumcosmodynamicslablive', '_blank')">
-            Ibonarium Cosmo Dynamics LAB LIVE
-        </h1>
+<div id="events">Завантаження…</div>
 
-        <!-- Перший ряд -->
-        <div class="row">
-            <div class="block red-gif">
-                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c2.gif" alt="LASCO C2" loading="lazy">
-            </div>
-            <div class="block sdo-photo">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0171.jpg" alt="AIA 171" loading="lazy">
-            </div>
-            <div class="block sdo-photo">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0193.jpg" alt="AIA 193" loading="lazy">
-            </div>
-            <div class="block sdo-photo">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0304.jpg" alt="AIA 304" loading="lazy">
-            </div>
-        </div>
+<footer>
+Data: LMSAL HEK · auto update 5 min
+</footer>
 
-        <!-- Другий ряд -->
-        <div class="row">
-            <div class="block blue-gif">
-                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c3.gif" alt="LASCO C3" loading="lazy">
-            </div>
-            <div class="block sdo-photo">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0211.jpg" alt="AIA 211" loading="lazy">
-            </div>
-            <div class="block sdo-photo">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0131.jpg" alt="AIA 131" loading="lazy">
-            </div>
-            <div class="block sdo-photo">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0094.jpg" alt="AIA 094" loading="lazy">
-            </div>
-        </div>
+<script>
+const API =
+"https://www.lmsal.com/hek/api/events/?event_type=FL,ER,CME&limit=12&format=json";
 
-        <div class="note">
-            <p>NASA/ESA SOHO LASCO + NASA SDO AIA • Реал-тайм спостереження Сонця</p>
-        </div>
-    </div>
+async function load(){
+    try{
+        const r = await fetch(API);
+        const j = await r.json();
+        const box = document.getElementById("events");
+        box.innerHTML="";
 
-    <script>
-        // Клік по заголовку → Телеграм у новій вкладці
-        document.querySelector('h1').addEventListener('click', function() {
-            window.open('https://t.me/ibonariumcosmodynamicslablive', '_blank');
+        j.result.forEach(e=>{
+            const div=document.createElement("div");
+            div.className="event";
+
+            const cls=e.goess_class||"";
+            const clsType=cls[0]||"";
+
+            let video="";
+            if(e.event_movieurl){
+                video=`<video controls src="${e.event_movieurl}"></video>`;
+            }else if(e.refs){
+                const v=e.refs.find(r=>r.type==="movie");
+                if(v) video=`<video controls src="${v.url}"></video>`;
+            }
+
+            div.innerHTML=`
+                <div class="time">⏱ ${e.event_starttime}</div>
+                <div class="type">
+                    ☀ ${e.event_type}
+                    <span class="${clsType}">🔥 ${cls}</span>
+                </div>
+                <div class="coord">
+                    📍 X:${e.hpc_x ?? "?"} Y:${e.hpc_y ?? "?"}
+                </div>
+                <div class="instrument">
+                    🛰 ${e.obs_instrument || "unknown"}
+                </div>
+                ${video}
+            `;
+            box.appendChild(div);
         });
-    </script>
+
+    }catch(e){
+        document.getElementById("events").innerText="Помилка даних";
+    }
+}
+
+load();
+setInterval(load,300000);
+</script>
+
 </body>
 </html>
