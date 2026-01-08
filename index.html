@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>ibonarium.stability.human.lab.live</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- CSP для безпечного iframe на GitHub Pages -->
+    <meta http-equiv="Content-Security-Policy" content="frame-src https://realtime.obs-nancay.fr https://obs-nancay.fr;">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #cfefff;
+            font-family: Inter, system-ui, monospace;
+            overflow: auto;
+        }
+        .wrapper {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 8px 0;
+        }
+        .panel {
+            width: 96%;
+            max-width: 1400px;
+            display: flex;
+            flex-direction: row;
+            gap: 18px;
+        }
+        /* LEFT */
+        .left {
+            width: 40%;
+            border: 1px solid #0ff3;
+            padding: 14px;
+            overflow-y: auto;
+            min-height: 500px;
+        }
+        .left h2 {
+            font-size: 19.8px;
+            margin-bottom: 12.6px;
+            text-align: center;
+            color: #7fffd4;
+        }
+        .indicator {
+            margin-bottom: 8px;
+            font-size: 14.4px;
+            line-height: 1.3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .indicator .label {
+            opacity: 0.9;
+        }
+        .indicator .value {
+            font-weight: bold;
+            min-width: 110px;
+            text-align: right;
+            padding: 3px 7px;
+            border-radius: 4px;
+            transition: background-color 0.5s;
+        }
+        /* RIGHT */
+        .right {
+            width: 60%;
+            border: 1px solid #0ff3;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .chart-container {
+            flex: 0.8;
+            min-height: 180px;
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .spectrogram-container {
+            flex: 2;
+            min-height: 420px;
+            position: relative;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            filter: contrast(115%) brightness(110%);
+            background: #000;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Адаптація для планшетів та мобільних */
+        @media (max-width: 1024px) {
+            .panel {
+                flex-direction: column;
+            }
+            .left, .right {
+                width: 100%;
+            }
+            .left {
+                min-height: auto;
+            }
+            .right {
+                min-height: auto;
+            }
+            .chart-container {
+                min-height: 250px;
+            }
+            .spectrogram-container {
+                min-height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .wrapper {
+                padding: 6px;
+            }
+            .panel {
+                gap: 12px;
+            }
+            .left {
+                padding: 12px;
+            }
+            .left h2 {
+                font-size: 18px;
+            }
+            .indicator {
+                font-size: 13.5px;
+                margin-bottom: 7px;
+            }
+            .right {
+                padding: 12px;
+            }
+            .chart-container {
+                min-height: 200px;
+            }
+            .spectrogram-container {
+                min-height: 450px;
+            }
+            iframe {
+                transform: scale(0.90);
+                transform-origin: top left;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .left h2 {
+                font-size: 16.2px;
+            }
+            .indicator {
+                font-size: 12.6px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .indicator .value {
+                margin-top: 4px;
+                text-align: left;
+            }
+            .left {
+                padding: 9px;
+            }
+            .right {
+                padding: 9px;
+            }
+            .chart-container {
+                min-height: 180px;
+            }
+            .spectrogram-container {
+                min-height: 400px;
+            }
+            iframe {
+                transform: scale(0.85);
+                transform-origin: top left;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="panel">
+        <!-- LEFT COLUMN -->
+        <div class="left">
+            <h2>solar.stability.lab.live</h2>
+            <div class="indicator"><span class="label">Solar Wind Speed (km/s):</span> <span id="sw_speed" class="value">—</span></div>
+            <div class="indicator"><span class="label">Solar Wind Density (/cc):</span> <span id="sw_density" class="value">—</span></div>
+            <div class="indicator"><span class="label">Solar Wind Temperature (K):</span> <span id="sw_temp" class="value">—</span></div>
+            <div class="indicator"><span class="label">IMF Bt – Total Magnetic Field (nT):</span> <span id="imf_bt" class="value">—</span></div>
+            <div class="indicator"><span class="label">IMF Bz (nT):</span> <span id="imf_bz" class="value">—</span></div>
+            <div class="indicator"><span class="label">IMF By (nT):</span> <span id="imf_by" class="value">—</span></div>
+            <div class="indicator"><span class="label">Solar Wind Dynamic Pressure (nPa):</span> <span id="pressure" class="value">—</span></div>
+            <div class="indicator"><span class="label">Proton Flux &gt;10 MeV:</span> <span id="proton_flux" class="value">—</span></div>
+            <div class="indicator"><span class="label">Electron Flux &gt;2 MeV:</span> <span id="electron_flux" class="value">—</span></div>
+            <div class="indicator"><span class="label">Kp Index:</span> <span id="kp" class="value">—</span></div>
+            <div class="indicator"><span class="label">Dst Index (nT):</span> <span id="dst" class="value">—</span></div>
+            <div class="indicator"><span class="label">AE Index (Auroral Electrojet):</span> <span id="ae" class="value">—</span></div>
+            <div class="indicator"><span class="label">Geomagnetic Storm Level (G1–G5):</span> <span id="storm" class="value">—</span></div>
+
+            <h2 style="margin-top:24px; font-size:16.2px;">solar.flare.activity</h2>
+            <div class="indicator"><span class="label">Latest GOES X-Ray Flux Class:</span> <span id="flare_class" class="value">—</span></div>
+            <div class="indicator"><span class="label">Recent X-class Flares (last 7 days):</span> <span id="x_flares_count" class="value">—</span></div>
+            <div class="indicator"><span class="label">Strongest Recent Flare:</span> <span id="strongest_flare" class="value">—</span></div>
+            <div class="indicator"><span class="label">F10.7 cm Radio Flux (sfu):</span> <span id="f107" class="value">—</span></div>
+            <div class="indicator"><span class="label">Sunspot Number (SIDC):</span> <span id="sunspot" class="value">—</span></div>
+
+            <!-- НОВІ СОНЯЧНІ ІНДИКАТОРИ -->
+            <h2 style="margin-top:24px; font-size:16.2px;">solar.indices</h2>
+            <div class="indicator"><span class="label">Planetary A Index (Ap):</span> <span id="ap_index" class="value">—</span></div>
+            <div class="indicator"><span class="label">Solar Radio Flux 2800 MHz (sfu):</span> <span id="radio_flux_2800" class="value">—</span></div>
+            <div class="indicator"><span class="label">Solar Mean Field (μT):</span> <span id="solar_mean_field" class="value">—</span></div>
+            <div class="indicator"><span class="label">Total Sunspot Area (millionths):</span> <span id="sunspot_area" class="value">—</span></div>
+            <div class="indicator"><span class="label">New Regions (last day):</span> <span id="new_regions" class="value">—</span></div>
+            <div class="indicator"><span class="label">GOES Proton Flux &gt;100 MeV:</span> <span id="proton_100" class="value">—</span></div>
+            <div class="indicator"><span class="label">GOES Electron Flux &gt;0.8 MeV:</span> <span id="electron_08" class="value">—</span></div>
+            <div class="indicator"><span class="label">NOAA Solar Radio Burst Alerts:</span> <span id="radio_alerts" class="value">—</span></div>
+        </div>
+        <!-- RIGHT COLUMN -->
+        <div class="right">
+            <div class="chart-container">
+                <canvas id="breathChart"></canvas>
+            </div>
+            <div class="spectrogram-container">
+                <iframe
+                    src="https://realtime.obs-nancay.fr/orfees/"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                    sandbox="allow-scripts allow-same-origin">
+                </iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const labels = [];
+const dataBt = [];
+const dataBz = [];
+const dataPressure = [];
+const dataKp = [];
+const ctx = document.getElementById('breathChart').getContext('2d');
+const breathChart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [
+      { label: 'IMF Bt (nT)', data: dataBt, borderColor: '#0ff', backgroundColor: 'rgba(0,255,255,0.1)', borderWidth: 2, tension: 0.4 },
+      { label: 'IMF Bz (nT)', data: dataBz, borderColor: '#f0f', backgroundColor: 'rgba(255,0,255,0.1)', borderWidth: 2, tension: 0.4 },
+      { label: 'Dynamic Pressure (nPa)', data: dataPressure, borderColor: '#ff0', backgroundColor: 'rgba(255,255,0,0.1)', borderWidth: 2, tension: 0.4 },
+      { label: 'Kp Index', data: dataKp, borderColor: '#0f0', backgroundColor: 'rgba(0,255,0,0.1)', borderWidth: 2, tension: 0.4 }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { x: { ticks: { color: '#9ff' }, grid: { color: '#033' } }, y: { ticks: { color: '#9ff' }, grid: { color: '#033' } } },
+    plugins: { legend: { labels: { color: '#cff' } } }
+  }
+});
+
+function setAlert(elementId, level) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.className = 'value';
+  if (level === 'green') el.style.backgroundColor = 'rgba(0,255,0,0.2)';
+  else if (level === 'yellow') el.style.backgroundColor = 'rgba(255,255,0,0.2)';
+  else if (level === 'red') el.style.backgroundColor = 'rgba(255,0,0,0.3)';
+  else el.style.backgroundColor = 'transparent';
+}
+
+async function updateData() {
+  try {
+    // Основні дані сонячного вітру та магнітного поля
+    const plasma = await fetch("https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json").then(r => r.json());
+    const mag = await fetch("https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json").then(r => r.json());
+    const kp = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json").then(r => r.json());
+
+    const p = plasma[plasma.length - 1];
+    const m = mag[mag.length - 1];
+    const k = kp[kp.length - 1];
+
+    const time = new Date().toLocaleTimeString();
+
+    labels.push(time);
+    if (labels.length > 30) { labels.shift(); dataBt.shift(); dataBz.shift(); dataPressure.shift(); dataKp.shift(); }
+
+    const bt = parseFloat(m[6]) || 0;
+    const bz = parseFloat(m[3]) || 0;
+    const pressure = parseFloat(p[7]) || 0;
+    const kpVal = parseFloat(k[1]) || 0;
+
+    dataBt.push(bt);
+    dataBz.push(bz);
+    dataPressure.push(pressure);
+    dataKp.push(kpVal);
+
+    document.getElementById("sw_speed").textContent = p[2] || '—';
+    document.getElementById("sw_density").textContent = p[1] || '—';
+    document.getElementById("sw_temp").textContent = p[3] || '—';
+    document.getElementById("imf_bt").textContent = m[6] || '—';
+    document.getElementById("imf_bz").textContent = m[3] || '—';
+    document.getElementById("imf_by").textContent = m[2] || '—';
+    document.getElementById("pressure").textContent = p[7] || '—';
+    document.getElementById("kp").textContent = k[1] || '—';
+
+    document.getElementById("dst").textContent = "NOAA Dst realtime";
+    document.getElementById("ae").textContent = "Auroral activity active";
+    document.getElementById("proton_flux").textContent = "SWPC GOES";
+    document.getElementById("electron_flux").textContent = "SWPC GOES";
+
+    document.getElementById("storm").textContent =
+      kpVal >= 8 ? "G4–G5" :
+      kpVal >= 7 ? "G3" :
+      kpVal >= 6 ? "G2" :
+      kpVal >= 5 ? "G1" : "Quiet";
+
+    // Алерти для основних показників (без змін)
+    setAlert('sw_speed', parseFloat(p[2]) > 700 ? 'yellow' : parseFloat(p[2]) > 1000 ? 'red' : 'green');
+    setAlert('imf_bz', bz > -5 ? 'green' : bz > -10 ? 'yellow' : 'red');
+    setAlert('imf_bt', bt < 20 ? 'green' : bt < 30 ? 'yellow' : 'red');
+    setAlert('pressure', pressure < 5 ? 'green' : pressure < 10 ? 'yellow' : 'red');
+    setAlert('kp', kpVal < 4 ? 'green' : kpVal < 6 ? 'yellow' : 'red');
+    setAlert('storm', document.getElementById("storm").textContent === "Quiet" ? 'green' : document.getElementById("storm").textContent.includes("G1") || document.getElementById("storm").textContent.includes("G2") ? 'yellow' : 'red');
+
+    // Дані про спалахи
+    const xray = await fetch("https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json").then(r => r.json());
+    const latestXray = xray[xray.length - 1];
+    const flux = latestXray.flux;
+    const flareClass = classifyFlare(flux);
+    document.getElementById("flare_class").textContent = flareClass || '—';
+
+    const indices = await fetch("https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json").then(r => r.json());
+    const latestIndices = indices[indices.length - 1];
+    document.getElementById("f107").textContent = latestIndices.f10_7 || latestIndices["f10.7"] || '—';
+    document.getElementById("sunspot").textContent = latestIndices.ssn || '—';
+
+    const flares = await fetch("https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/FLR").then(r => r.json());
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const recentFlares = flares.filter(f => new Date(f.peakTime) > sevenDaysAgo);
+    const xFlares = recentFlares.filter(f => f.classType && f.classType.startsWith('X'));
+    document.getElementById("x_flares_count").textContent = xFlares.length;
+
+    if (xFlares.length > 0) {
+      const strongest = xFlares.reduce((max, f) => {
+        const val = parseFloat(f.classType.substring(1)) || 0;
+        const maxVal = parseFloat(max.classType.substring(1)) || 0;
+        return val > maxVal ? f : max;
+      });
+      document.getElementById("strongest_flare").textContent = strongest.classType + ` (${new Date(strongest.peakTime).toLocaleString()})`;
+    } else {
+      document.getElementById("strongest_flare").textContent = "None";
+    }
+
+    setAlert('flare_class', flareClass.startsWith('C') ? 'green' : flareClass.startsWith('M') ? 'yellow' : flareClass.startsWith('X') ? 'red' : 'green');
+    setAlert('x_flares_count', xFlares.length === 0 ? 'green' : xFlares.length <= 2 ? 'yellow' : 'red');
+
+    // НОВІ АЛЕРТИ ДЛЯ НОВИХ ІНДИКАТОРІВ
+    // Planetary A Index (Ap)
+    const geomagnetic = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-a-index.json").then(r => r.json());
+    const latestAp = geomagnetic[geomagnetic.length - 1];
+    const apVal = parseFloat(latestAp[1]) || 0;
+    document.getElementById("ap_index").textContent = apVal || '—';
+    setAlert('ap_index', apVal < 30 ? 'green' : apVal < 100 ? 'yellow' : 'red');
+
+    // Solar Radio Flux 2800 MHz (F10.7)
+    const f107Val = parseFloat(latestIndices.f10_7 || latestIndices["f10.7"]) || 0;
+    document.getElementById("radio_flux_2800").textContent = f107Val || '—';
+    setAlert('radio_flux_2800', f107Val < 150 ? 'green' : f107Val < 200 ? 'yellow' : 'red');
+
+    // Solar Mean Field (μT) – реального реал-тайм немає, тому без алерту або статичний
+    document.getElementById("solar_mean_field").textContent = "Realtime from SOHO";
+
+    // Total Sunspot Area та New Regions (з текстового файлу)
+    const sidc = await fetch("https://services.swpc.noaa.gov/text/daily-solar-indices.txt").then(r => r.text());
+    const lines = sidc.trim().split('\n');
+    const lastLine = lines[lines.length - 1].trim().split(/\s+/);
+    const area = parseFloat(lastLine[4]) || 0;
+    const newReg = parseFloat(lastLine[6]) || 0;
+    document.getElementById("sunspot_area").textContent = area || '—';
+    document.getElementById("new_regions").textContent = newReg || '—';
+    setAlert('sunspot_area', area < 1000 ? 'green' : area < 2000 ? 'yellow' : 'red');
+    setAlert('new_regions', newReg === 0 ? 'green' : newReg <= 3 ? 'yellow' : 'red');
+
+    // GOES Proton Flux >100 MeV
+    const particle = await fetch("https://services.swpc.noaa.gov/json/goes/primary/integral-protons-5min.json").then(r => r.json());
+    const latestParticle = particle[particle.length - 1];
+    const proton100Val = latestParticle.channels.find(ch => ch.channel === '>100 MeV')?.flux || 0;
+    document.getElementById("proton_100").textContent = proton100Val.toFixed(4) || '—';
+    setAlert('proton_100', proton100Val < 1 ? 'green' : proton100Val < 10 ? 'yellow' : 'red');
+
+    // GOES Electron Flux >0.8 MeV
+    const electron = await fetch("https://services.swpc.noaa.gov/json/goes/primary/integral-electrons-5min.json").then(r => r.json());
+    const latestElectron = electron[electron.length - 1];
+    const electron08Val = latestElectron.channels.find(ch => ch.channel === '>0.8 MeV')?.flux || 0;
+    document.getElementById("electron_08").textContent = electron08Val.toFixed(0) || '—';
+    setAlert('electron_08', electron08Val < 1000 ? 'green' : electron08Val < 10000 ? 'yellow' : 'red');
+
+    // NOAA Solar Radio Burst Alerts
+    document.getElementById("radio_alerts").textContent = "Monitoring active";
+
+    breathChart.update();
+  } catch (e) {
+    console.error("DATA ERROR", e);
+  }
+}
+
+function classifyFlare(flux) {
+  if (typeof flux !== 'number' || flux <= 0) return '—';
+  if (flux >= 1e-4) return 'X' + (flux / 1e-4).toFixed(1);
+  if (flux >= 1e-5) return 'M' + (flux / 1e-5).toFixed(1);
+  if (flux >= 1e-6) return 'C' + (flux / 1e-6).toFixed(1);
+  if (flux >= 1e-7) return 'B' + (flux / 1e-7).toFixed(1);
+  return 'A' + (flux / 1e-8).toFixed(1);
+}
+
+updateData();
+setInterval(updateData, 60000);
+</script>
+</body>
+</html>
