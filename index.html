@@ -282,7 +282,7 @@ function setAlert(elementId, level) {
 
 async function updateData() {
   try {
-    // Основні дані сонячного вітру та магнітного поля
+    // Основні дані (без змін)
     const plasma = await fetch("https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json").then(r => r.json());
     const mag = await fetch("https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json").then(r => r.json());
     const kp = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json").then(r => r.json());
@@ -326,7 +326,6 @@ async function updateData() {
       kpVal >= 6 ? "G2" :
       kpVal >= 5 ? "G1" : "Quiet";
 
-    // Алерти для основних показників (без змін)
     setAlert('sw_speed', parseFloat(p[2]) > 700 ? 'yellow' : parseFloat(p[2]) > 1000 ? 'red' : 'green');
     setAlert('imf_bz', bz > -5 ? 'green' : bz > -10 ? 'yellow' : 'red');
     setAlert('imf_bt', bt < 20 ? 'green' : bt < 30 ? 'yellow' : 'red');
@@ -343,7 +342,8 @@ async function updateData() {
 
     const indices = await fetch("https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json").then(r => r.json());
     const latestIndices = indices[indices.length - 1];
-    document.getElementById("f107").textContent = latestIndices.f10_7 || latestIndices["f10.7"] || '—';
+    const f107Val = latestIndices.f10_7 || latestIndices["f10.7"] || '—';
+    document.getElementById("f107").textContent = f107Val;
     document.getElementById("sunspot").textContent = latestIndices.ssn || '—';
 
     const flares = await fetch("https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/FLR").then(r => r.json());
@@ -367,48 +367,59 @@ async function updateData() {
     setAlert('flare_class', flareClass.startsWith('C') ? 'green' : flareClass.startsWith('M') ? 'yellow' : flareClass.startsWith('X') ? 'red' : 'green');
     setAlert('x_flares_count', xFlares.length === 0 ? 'green' : xFlares.length <= 2 ? 'yellow' : 'red');
 
-    // НОВІ АЛЕРТИ ДЛЯ НОВИХ ІНДИКАТОРІВ
-    // Planetary A Index (Ap)
+    // ВИПРАВЛЕНИЙ БЛОК solar.indices
+    // Ap Index
     const geomagnetic = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-a-index.json").then(r => r.json());
     const latestAp = geomagnetic[geomagnetic.length - 1];
     const apVal = parseFloat(latestAp[1]) || 0;
     document.getElementById("ap_index").textContent = apVal || '—';
     setAlert('ap_index', apVal < 30 ? 'green' : apVal < 100 ? 'yellow' : 'red');
 
-    // Solar Radio Flux 2800 MHz (F10.7)
-    const f107Val = parseFloat(latestIndices.f10_7 || latestIndices["f10.7"]) || 0;
+    // Solar Radio Flux 2800 MHz = F10.7
     document.getElementById("radio_flux_2800").textContent = f107Val || '—';
-    setAlert('radio_flux_2800', f107Val < 150 ? 'green' : f107Val < 200 ? 'yellow' : 'red');
+    setAlert('radio_flux_2800', parseFloat(f107Val) < 150 ? 'green' : parseFloat(f107Val) < 200 ? 'yellow' : 'red');
 
-    // Solar Mean Field (μT) – реального реал-тайм немає, тому без алерту або статичний
-    document.getElementById("solar_mean_field").textContent = "Realtime from SOHO";
+    // Solar Mean Field – немає реал-тайм, статичний
+    document.getElementById("solar_mean_field").textContent = "No realtime data";
 
-    // Total Sunspot Area та New Regions (з текстового файлу)
-    const sidc = await fetch("https://services.swpc.noaa.gov/text/daily-solar-indices.txt").then(r => r.text());
-    const lines = sidc.trim().split('\n');
-    const lastLine = lines[lines.length - 1].trim().split(/\s+/);
-    const area = parseFloat(lastLine[4]) || 0;
-    const newReg = parseFloat(lastLine[6]) || 0;
-    document.getElementById("sunspot_area").textContent = area || '—';
-    document.getElementById("new_regions").textContent = newReg || '—';
-    setAlert('sunspot_area', area < 1000 ? 'green' : area < 2000 ? 'yellow' : 'red');
-    setAlert('new_regions', newReg === 0 ? 'green' : newReg <= 3 ? 'yellow' : 'red');
+    // Total Sunspot Area & New Regions з txt файлу (виправлено парсинг)
+    const sidcText = await fetch("https://services.swpc.noaa.gov/text/daily-solar-indices.txt").then(r => r.text());
+    const lines = sidcText.trim().split('\n');
+    let lastDataLine = null;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].match(/^\d{8}/)) { // шукаємо рядок з датою YYYYMMDD
+        lastDataLine = lines[i];
+        break;
+      }
+    }
+    if (lastDataLine) {
+      const parts = lastDataLine.trim().split(/\s+/);
+      const area = parts[4] || '—'; // Total Sunspot Area
+      const newReg = parts[6] || '—'; // New Regions
+      document.getElementById("sunspot_area").textContent = area;
+      document.getElementById("new_regions").textContent = newReg;
+      setAlert('sunspot_area', parseFloat(area) < 1000 ? 'green' : parseFloat(area) < 2000 ? 'yellow' : 'red');
+      setAlert('new_regions', parseFloat(newReg) === 0 ? 'green' : parseFloat(newReg) <= 3 ? 'yellow' : 'red');
+    } else {
+      document.getElementById("sunspot_area").textContent = '—';
+      document.getElementById("new_regions").textContent = '—';
+    }
 
-    // GOES Proton Flux >100 MeV
-    const particle = await fetch("https://services.swpc.noaa.gov/json/goes/primary/integral-protons-5min.json").then(r => r.json());
-    const latestParticle = particle[particle.length - 1];
-    const proton100Val = latestParticle.channels.find(ch => ch.channel === '>100 MeV')?.flux || 0;
-    document.getElementById("proton_100").textContent = proton100Val.toFixed(4) || '—';
-    setAlert('proton_100', proton100Val < 1 ? 'green' : proton100Val < 10 ? 'yellow' : 'red');
+    // GOES Proton Flux >100 MeV (правильний endpoint)
+    const protons = await fetch("https://services.swpc.noaa.gov/json/goes/primary/integral-protons-5min.json").then(r => r.json());
+    const latestProtons = protons[protons.length - 1];
+    const proton100Val = latestProtons.channels.find(ch => ch.energy === '>100 MeV')?.flux || '—';
+    document.getElementById("proton_100").textContent = proton100Val;
+    setAlert('proton_100', parseFloat(proton100Val) < 1 ? 'green' : parseFloat(proton100Val) < 10 ? 'yellow' : 'red');
 
-    // GOES Electron Flux >0.8 MeV
-    const electron = await fetch("https://services.swpc.noaa.gov/json/goes/primary/integral-electrons-5min.json").then(r => r.json());
-    const latestElectron = electron[electron.length - 1];
-    const electron08Val = latestElectron.channels.find(ch => ch.channel === '>0.8 MeV')?.flux || 0;
-    document.getElementById("electron_08").textContent = electron08Val.toFixed(0) || '—';
-    setAlert('electron_08', electron08Val < 1000 ? 'green' : electron08Val < 10000 ? 'yellow' : 'red');
+    // GOES Electron Flux >0.8 MeV (правильний endpoint)
+    const electrons = await fetch("https://services.swpc.noaa.gov/json/goes/primary/integral-electrons-5min.json").then(r => r.json());
+    const latestElectrons = electrons[electrons.length - 1];
+    const electron08Val = latestElectrons.channels.find(ch => ch.energy === '>0.8 MeV')?.flux || '—';
+    document.getElementById("electron_08").textContent = electron08Val;
+    setAlert('electron_08', parseFloat(electron08Val) < 1000 ? 'green' : parseFloat(electron08Val) < 10000 ? 'yellow' : 'red');
 
-    // NOAA Solar Radio Burst Alerts
+    // NOAA Solar Radio Burst Alerts – статичний, бо немає простого реал-тайм JSON
     document.getElementById("radio_alerts").textContent = "Monitoring active";
 
     breathChart.update();
