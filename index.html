@@ -10,7 +10,7 @@
 html,body{
     margin:0;
     background:#000;
-    color:#cfefff;
+    color:#bfefff;
     font-family: Inter, system-ui, monospace;
 }
 header{
@@ -36,8 +36,7 @@ header{
 .C{color:#7fff7f}
 .coord{opacity:.8}
 .instrument{opacity:.7;font-size:12px}
-a{color:#7ff}
-iframe,video,img{
+video,img{
     width:100%;
     margin-top:6px;
     border:1px solid #122;
@@ -60,70 +59,64 @@ IBONARIUM :: SOLAR EVENTS :: LIVE
 <div id="events">Завантаження…</div>
 
 <footer>
-Data: NASA DONKI · auto update 10 min
+Data: LMSAL HEK v2 · auto update 5 min
 </footer>
 
 <script>
-const API_KEY = "DEMO_KEY";
-
 function iso(d){
-    return d.toISOString().split("T")[0];
+    return d.toISOString().split(".")[0];
 }
 
-// останні 7 днів
+// останні 72 години
 const end = iso(new Date());
-const start = iso(new Date(Date.now() - 7*24*3600*1000));
+const start = iso(new Date(Date.now() - 72*3600*1000));
 
-// Flare + CME
-const FLARE_API =
-`https://api.nasa.gov/DONKI/FLR?startDate=${start}&endDate=${end}&api_key=${API_KEY}`;
-
-const CME_API =
-`https://api.nasa.gov/DONKI/CME?startDate=${start}&endDate=${end}&api_key=${API_KEY}`;
+const API =
+`https://www.lmsal.com/hek/api/v2/events` +
+`?event_type=FL,ER,CME` +
+`&startTime=${start}` +
+`&endTime=${end}` +
+`&limit=12`;
 
 async function load(){
-    const box=document.getElementById("events");
-    box.innerHTML="";
-
     try{
-        const [flares,cmes]=await Promise.all([
-            fetch(FLARE_API).then(r=>r.json()),
-            fetch(CME_API).then(r=>r.json())
-        ]);
+        const r = await fetch(API);
+        const j = await r.json();
 
-        const events=[...flares.map(e=>({...e,_type:"FL"})),
-                      ...cmes.map(e=>({...e,_type:"CME"}))];
+        const box = document.getElementById("events");
+        box.innerHTML="";
 
-        events.sort((a,b)=>
-            new Date(b.beginTime||b.startTime) -
-            new Date(a.beginTime||a.startTime)
-        );
+        if(!j.events || j.events.length===0){
+            box.innerHTML="Немає подій за період";
+            return;
+        }
 
-        events.slice(0,12).forEach(e=>{
+        j.events.forEach(e=>{
             const div=document.createElement("div");
             div.className="event";
 
-            const cls=e.classType || "";
+            const cls=e.goess_class || "";
             const clsType=cls.charAt(0);
 
+            // відео або fallback-анімація
             let media="";
-            if(e.link){
-                media=`<a href="${e.link}" target="_blank">🎞 Video / Animation</a>`;
+            if(e.event_movie_url){
+                media=`<video controls src="${e.event_movie_url}"></video>`;
+            } else if(e.preview_image){
+                media=`<img src="${e.preview_image}" alt="preview">`;
             }
 
             div.innerHTML=`
-                <div class="time">
-                    ⏱ ${e.beginTime || e.startTime}
-                </div>
+                <div class="time">⏱ ${e.start_time}</div>
                 <div class="type">
-                    ☀ ${e._type}
+                    ☀ ${e.event_type}
                     <span class="${clsType}">🔥 ${cls}</span>
                 </div>
                 <div class="coord">
-                    📍 ${e.sourceLocation || "—"}
+                    📍 X:${e.hpc_x ?? "?"} Y:${e.hpc_y ?? "?"}
                 </div>
                 <div class="instrument">
-                    🛰 ${e.instruments ? e.instruments.join(", ") : "NASA"}
+                    🛰 ${e.obs_instrument || "unknown"}
                 </div>
                 ${media}
             `;
@@ -131,13 +124,14 @@ async function load(){
         });
 
     }catch(err){
-        box.innerText="Помилка отримання даних NASA DONKI";
+        document.getElementById("events").innerText =
+            "HEK v2 недоступний або тимчасовий збій";
         console.error(err);
     }
 }
 
 load();
-setInterval(load,600000); // 10 хв
+setInterval(load,300000); // 5 хв
 </script>
 
 </body>
