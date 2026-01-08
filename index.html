@@ -36,6 +36,12 @@ header{
 .C{color:#7fff7f}
 .coord{opacity:.8}
 .instrument{opacity:.7;font-size:12px}
+a{color:#7ff}
+iframe,video,img{
+    width:100%;
+    margin-top:6px;
+    border:1px solid #122;
+}
 footer{
     text-align:center;
     padding:8px;
@@ -85,10 +91,8 @@ async function load(){
             fetch(CME_API).then(r=>r.json())
         ]);
 
-        const events=[
-            ...flares.map(e=>({...e,_type:"FL"})),
-            ...cmes.map(e=>({...e,_type:"CME"}))
-        ];
+        const events=[...flares.map(e=>({...e,_type:"FL"})),
+                      ...cmes.map(e=>({...e,_type:"CME"}))];
 
         events.sort((a,b)=>
             new Date(b.beginTime||b.startTime) -
@@ -102,9 +106,10 @@ async function load(){
             const cls=e.classType || "";
             const clsType=cls.charAt(0);
 
-            const instruments = e.instruments
-              ? e.instruments.map(i => i.displayName).join(", ")
-              : "NASA";
+            let media="";
+            if(e.link){
+                media=`<a href="${e.link}" target="_blank">🎞 Video / Animation</a>`;
+            }
 
             div.innerHTML=`
                 <div class="time">
@@ -118,8 +123,9 @@ async function load(){
                     📍 ${e.sourceLocation || "—"}
                 </div>
                 <div class="instrument">
-                    🛰 ${instruments}
+                    🛰 ${e.instruments ? e.instruments.join(", ") : "NASA"}
                 </div>
+                ${media}
             `;
             box.appendChild(div);
         });
