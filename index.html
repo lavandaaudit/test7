@@ -36,12 +36,12 @@ header{
 .C{color:#7fff7f}
 .coord{opacity:.8}
 .instrument{opacity:.7;font-size:12px}
-a{color:#7ff}
-iframe,video,img{
+img{
     width:100%;
     margin-top:6px;
     border:1px solid #122;
 }
+a{color:#7ff;font-size:12px}
 footer{
     text-align:center;
     padding:8px;
@@ -60,7 +60,7 @@ IBONARIUM :: SOLAR EVENTS :: LIVE
 <div id="events">Завантаження…</div>
 
 <footer>
-Data: NASA DONKI · auto update 10 min
+NASA DONKI · SDO · SOHO · auto update
 </footer>
 
 <script>
@@ -70,11 +70,9 @@ function iso(d){
     return d.toISOString().split("T")[0];
 }
 
-// останні 7 днів
 const end = iso(new Date());
 const start = iso(new Date(Date.now() - 7*24*3600*1000));
 
-// Flare + CME
 const FLARE_API =
 `https://api.nasa.gov/DONKI/FLR?startDate=${start}&endDate=${end}&api_key=${API_KEY}`;
 
@@ -91,53 +89,57 @@ async function load(){
             fetch(CME_API).then(r=>r.json())
         ]);
 
-        const events=[...flares.map(e=>({...e,_type:"FL"})),
-                      ...cmes.map(e=>({...e,_type:"CME"}))];
+        const events=[
+            ...flares.map(e=>({...e,_type:"FL"})),
+            ...cmes.map(e=>({...e,_type:"CME"}))
+        ];
 
         events.sort((a,b)=>
             new Date(b.beginTime||b.startTime) -
             new Date(a.beginTime||a.startTime)
         );
 
-        events.slice(0,12).forEach(e=>{
+        events.slice(0,10).forEach(e=>{
             const div=document.createElement("div");
             div.className="event";
 
-            const cls=e.classType || "";
+            const cls=e.classType||"";
             const clsType=cls.charAt(0);
 
-            let media="";
+            const instruments = e.instruments
+              ? e.instruments.map(i=>i.displayName).join(", ")
+              : "NASA";
+
+            let media = `
+                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0171.jpg">
+                <img src="https://soho.nascom.nasa.gov/data/realtime/c2/1024/latest.jpg">
+            `;
+
             if(e.link){
-                media=`<a href="${e.link}" target="_blank">🎞 Video / Animation</a>`;
+                media += `<a href="${e.link}" target="_blank">▶ офіційна анімація події</a>`;
             }
 
             div.innerHTML=`
-                <div class="time">
-                    ⏱ ${e.beginTime || e.startTime}
-                </div>
+                <div class="time">⏱ ${e.beginTime || e.startTime}</div>
                 <div class="type">
                     ☀ ${e._type}
                     <span class="${clsType}">🔥 ${cls}</span>
                 </div>
-                <div class="coord">
-                    📍 ${e.sourceLocation || "—"}
-                </div>
-                <div class="instrument">
-                    🛰 ${e.instruments ? e.instruments.join(", ") : "NASA"}
-                </div>
+                <div class="coord">📍 ${e.sourceLocation || "—"}</div>
+                <div class="instrument">🛰 ${instruments}</div>
                 ${media}
             `;
             box.appendChild(div);
         });
 
     }catch(err){
-        box.innerText="Помилка отримання даних NASA DONKI";
+        box.innerText="Помилка отримання даних NASA";
         console.error(err);
     }
 }
 
 load();
-setInterval(load,600000); // 10 хв
+setInterval(load,600000);
 </script>
 
 </body>
