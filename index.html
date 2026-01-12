@@ -2,137 +2,198 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>IBONARIUM · SOLAR EVENTS · LIVE</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<title>Ibonarium Cosmo Dynamics LAB LIVE</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box}
-html,body{
-    margin:0;
-    background:#000;
-    color:#bfefff;
-    font-family: Inter, system-ui, monospace;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-header{
-    padding:12px;
-    text-align:center;
-    border-bottom:1px solid #122;
-    letter-spacing:2px;
+html, body {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+    color: #cfefff;
+    font-family: 'Cinzel', serif;
 }
-#events{
-    padding:10px;
-    display:grid;
-    gap:12px;
+canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
 }
-.event{
-    border:1px solid #133;
-    background:#02090d;
-    padding:10px;
+.wrapper {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 20px; /* Відступи зліва і справа */
 }
-.time{color:#7ff}
-.type{font-weight:bold}
-.X{color:#ff4b4b}
-.M{color:#ffb347}
-.C{color:#7fff7f}
-.coord{opacity:.8}
-.instrument{opacity:.7;font-size:12px}
-video,img{
-    width:100%;
-    margin-top:6px;
-    border:1px solid #122;
+.header {
+    text-align: center;
+    padding: 8px 4px;
+    background: #000;
+    flex-shrink: 0;
 }
-footer{
-    text-align:center;
-    padding:8px;
-    font-size:11px;
-    opacity:.5;
+.main-title {
+    font-size: clamp(16px, 3.5vw, 24px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    text-shadow: 0 0 10px #ffcc00;
+    color: #ffffff; /* білий заголовок */
+    transition: all 0.3s ease;
+}
+.main-title:hover {
+    text-shadow: 0 0 30px #ffcc00;
+    transform: scale(1.04);
+}
+.content {
+    flex: 1;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+}
+.row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+.block {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+.block:hover { transform: scale(1.02); }
+.block img, .block video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 10px;
+}
+.red-gif img { filter: hue-rotate(0deg) saturate(1.6) brightness(1.1); }
+.blue-gif img { filter: hue-rotate(200deg) saturate(1.6) brightness(1.1); }
+.footer {
+    text-align: center;
+    padding: 6px 0;
+    background: #000;
+    flex-shrink: 0;
+    font-size: clamp(10px, 2.5vw, 12px);
+    opacity: 0.8;
+    letter-spacing: 0.05em;
+}
+@media (max-width: 768px) {
+    .content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .row { grid-template-columns: 1fr; }
 }
 </style>
 </head>
-
 <body>
+<canvas id="stars"></canvas>
+<div class="wrapper">
+    <div class="header">
+        <div class="main-title" onclick="window.open('https://t.me/ibonariumcosmodynamicslablive', '_blank')">
+            Ibonarium Cosmo Dynamics LAB LIVE
+        </div>
+    </div>
+    <div class="content">
 
-<header>
-IBONARIUM :: SOLAR EVENTS :: LIVE
-</header>
+        <!-- Ряд зображень -->
+        <div class="row">
+            <div class="block red-gif">
+                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c2.gif" alt="LASCO C2" loading="lazy">
+            </div>
+            <div class="block">
+                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0171.jpg" alt="AIA 171" loading="lazy">
+            </div>
+        </div>
 
-<div id="events">Завантаження…</div>
+        <div class="row">
+            <div class="block blue-gif">
+                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c3.gif" alt="LASCO C3" loading="lazy">
+            </div>
+            <div class="block">
+                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0193.jpg" alt="AIA 193" loading="lazy">
+            </div>
+        </div>
 
-<footer>
-Data: LMSAL HEK v2 · auto update 5 min
-</footer>
+        <!-- Відео-анімації -->
+        <div class="row">
+            <div class="block">
+                <video controls autoplay loop muted>
+                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0171_synoptic.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div class="block">
+                <video controls autoplay loop muted>
+                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0193_synoptic.mp4" type="video/mp4">
+                </video>
+            </div>
+        </div>
+        <div class="row">
+            <div class="block">
+                <video controls autoplay loop muted>
+                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0211_synoptic.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div class="block">
+                <video controls autoplay loop muted>
+                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0304_synoptic.mp4" type="video/mp4">
+                </video>
+            </div>
+        </div>
+
+    </div>
+    <div class="footer">
+        sun.sun.sun/live/cosmodynamics.lab.live
+    </div>
+</div>
 
 <script>
-function iso(d){
-    return d.toISOString().split(".")[0];
+// STARFIELD
+const canvas = document.getElementById("stars");
+const ctx = canvas.getContext("2d");
+let W, H, stars = [];
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    stars = Array.from({length: 180}, () => ({
+        x: Math.random()*W, y: Math.random()*H, z: Math.random()*W
+    }));
 }
-
-// останні 72 години
-const end = iso(new Date());
-const start = iso(new Date(Date.now() - 72*3600*1000));
-
-const API =
-`https://www.lmsal.com/hek/api/v2/events` +
-`?event_type=FL,ER,CME` +
-`&startTime=${start}` +
-`&endTime=${end}` +
-`&limit=12`;
-
-async function load(){
-    try{
-        const r = await fetch(API);
-        const j = await r.json();
-
-        const box = document.getElementById("events");
-        box.innerHTML="";
-
-        if(!j.events || j.events.length===0){
-            box.innerHTML="Немає подій за період";
-            return;
+resize();
+window.addEventListener("resize", resize);
+function render() {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = "#4dd2ff";
+    stars.forEach(s => {
+        s.z -= 0.25;
+        if (s.z <= 0) s.z = W;
+        const k = 128 / s.z;
+        const x = (s.x - W/2) * k + W/2;
+        const y = (s.y - H/2) * k + H/2;
+        if (x>0 && x<W && y>0 && y<H) {
+            const size = (1 - s.z/W)*3;
+            ctx.fillRect(x,y,size,size);
         }
-
-        j.events.forEach(e=>{
-            const div=document.createElement("div");
-            div.className="event";
-
-            const cls=e.goess_class || "";
-            const clsType=cls.charAt(0);
-
-            // відео або fallback-анімація
-            let media="";
-            if(e.event_movie_url){
-                media=`<video controls src="${e.event_movie_url}"></video>`;
-            } else if(e.preview_image){
-                media=`<img src="${e.preview_image}" alt="preview">`;
-            }
-
-            div.innerHTML=`
-                <div class="time">⏱ ${e.start_time}</div>
-                <div class="type">
-                    ☀ ${e.event_type}
-                    <span class="${clsType}">🔥 ${cls}</span>
-                </div>
-                <div class="coord">
-                    📍 X:${e.hpc_x ?? "?"} Y:${e.hpc_y ?? "?"}
-                </div>
-                <div class="instrument">
-                    🛰 ${e.obs_instrument || "unknown"}
-                </div>
-                ${media}
-            `;
-            box.appendChild(div);
-        });
-
-    }catch(err){
-        document.getElementById("events").innerText =
-            "HEK v2 недоступний або тимчасовий збій";
-        console.error(err);
-    }
+    });
+    requestAnimationFrame(render);
 }
-
-load();
-setInterval(load,300000); // 5 хв
+render();
 </script>
-
 </body>
 </html>
