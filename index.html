@@ -5,30 +5,16 @@
 <title>IBONARIUM · CHESS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html, body {
-  margin:0;
-  padding:0;
-  overflow:hidden;
-  background:#000;
-  font-family:monospace;
-}
+html, body { margin:0; padding:0; overflow:hidden; background:#000; font-family:sans-serif; }
 canvas { display:block; }
 #ui {
   position:absolute;
-  top:12px;
-  left:50%;
-  transform:translateX(-50%);
-  color:#cfefff;
-  z-index:1;
-  text-align:center;
+  top:12px; left:50%; transform:translateX(-50%);
+  color:#cfefff; z-index:1; text-align:center;
 }
 button {
-  margin-top:6px;
-  background:transparent;
-  border:1px solid #2b425e;
-  color:#cfefff;
-  padding:6px 12px;
-  cursor:pointer;
+  margin-top:6px; background:transparent; border:1px solid #2b425e;
+  color:#cfefff; padding:6px 12px; cursor:pointer;
 }
 button:hover { background:#0d1b2a; }
 </style>
@@ -45,6 +31,7 @@ button:hover { background:#0d1b2a; }
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 let w,h;
+
 function resize(){
   w=canvas.width=window.innerWidth;
   h=canvas.height=window.innerHeight;
@@ -52,28 +39,25 @@ function resize(){
 window.addEventListener("resize",resize);
 resize();
 
-/* ===== STAR FIELD ===== */
+/* ====== STAR FIELD ====== */
 const stars = [];
 for(let i=0;i<200;i++){
   stars.push({x:Math.random()*w, y:Math.random()*h, z:Math.random()*2+0.5, r:Math.random()*1.5});
 }
+
 function drawStars(){
   ctx.clearRect(0,0,w,h);
   stars.forEach(s=>{
-    s.y+=0.05*s.z; if(s.y>h) s.y=0;
-    ctx.globalAlpha=0.4+s.z*0.3;
+    s.y += 0.05*s.z; if(s.y>h) s.y=0;
+    ctx.globalAlpha = 0.4 + s.z*0.3;
     ctx.fillStyle="#fff";
     ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
   });
 }
 
-/* ===== CHESS BOARD ===== */
+/* ====== CHESS BOARD ====== */
 const game = new Chess();
-const piecesUnicode = {
-  'p':'♟','r':'♜','n':'♞','b':'♝','q':'♛','k':'♚',
-  'P':'♙','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔'
-};
-let selected=null;
+const pieceSymbols = {p:'P',r:'R',n:'N',b:'B',q:'Q',k:'K'};
 
 function getBoardMetrics(){
   const size=Math.min(w,h)*0.6;
@@ -95,16 +79,20 @@ function drawBoard(){
 
 function drawPieces(){
   const {square, startX, startY} = getBoardMetrics();
-  ctx.font = square*0.8+"px monospace";
-  ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font = (square*0.5)+"px sans-serif";
   for(let i=0;i<8;i++){
     for(let j=0;j<8;j++){
       const sq = String.fromCharCode(97+j)+(8-i);
       const piece = game.get(sq);
       if(piece){
+        const x = startX+j*square + square/2;
+        const y = startY+i*square + square/2;
         ctx.fillStyle = piece.color==='w'?'#dbeafe':'#1f2937';
-        const symbol = piece.color==='w'?piece.type.toUpperCase():piece.type.toLowerCase();
-        ctx.fillText(piecesUnicode[symbol], startX+j*square+square/2, startY+i*square+square/2);
+        ctx.beginPath();
+        ctx.arc(x, y, square*0.4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = piece.color==='w'?'#000':'#fff';
+        ctx.fillText(pieceSymbols[piece.type], x, y+2);
       }
     }
   }
@@ -118,18 +106,19 @@ function getSquareFromCoords(x,y){
   return String.fromCharCode(97+file)+rank;
 }
 
-/* ===== MOUSE EVENTS ===== */
-canvas.addEventListener("mousedown", e=>{ selected=getSquareFromCoords(e.clientX,e.clientY); });
-canvas.addEventListener("mouseup", e=>{
+/* ====== MOUSE EVENTS ====== */
+let selected = null;
+canvas.addEventListener("mousedown", e => { selected=getSquareFromCoords(e.clientX,e.clientY); });
+canvas.addEventListener("mouseup", e => {
   if(!selected) return;
-  const target=getSquareFromCoords(e.clientX,e.clientY);
+  const target = getSquareFromCoords(e.clientX,e.clientY);
   if(target){
-    const move=game.move({from:selected,to:target,promotion:'q'});
+    const move = game.move({from:selected, to:target, promotion:'q'});
     if(move){ selected=null; aiMove(); } else selected=null;
   }
 });
 
-/* ===== STOCKFISH ===== */
+/* ====== STOCKFISH ====== */
 const engine = new Worker("https://cdn.jsdelivr.net/npm/stockfish/stockfish.js");
 engine.postMessage("uci");
 engine.postMessage("setoption name Skill Level value 20");
@@ -138,17 +127,17 @@ function aiMove(){
   engine.postMessage("position fen "+game.fen());
   engine.postMessage("go depth 18");
 }
-engine.onmessage=e=>{
+engine.onmessage = e=>{
   if(e.data.startsWith("bestmove")){
-    const m=e.data.split(" ")[1];
+    const m = e.data.split(" ")[1];
     game.move({from:m.slice(0,2), to:m.slice(2,4), promotion:'q'});
   }
 };
 
-/* ===== RESET ===== */
+/* ====== RESET ====== */
 function resetGame(){ game.reset(); }
 
-/* ===== ANIMATION LOOP ===== */
+/* ====== ANIMATION LOOP ====== */
 function animate(){
   drawStars();
   drawBoard();
