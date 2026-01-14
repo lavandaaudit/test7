@@ -2,198 +2,168 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="referrer" content="no-referrer">
-<meta name="robots" content="noindex,nofollow">
-<title>Ibonarium Cosmo Dynamics LAB LIVE</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<title>IBONARIUM · CHESS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- chess libs -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/www/css/chessboard.css">
+<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/chess.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/www/js/chessboard.js"></script>
+
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+html,body{
+  margin:0;
+  background:#000;
+  color:#cfefff;
+  font-family: Inter, system-ui, monospace;
+  overflow:hidden;
 }
-html, body {
-    width: 100%;
-    height: 100%;
-    background: #000;
-    overflow: hidden;
-    color: #cfefff;
-    font-family: 'Cinzel', serif;
+
+/* STAR FIELD */
+#stars{
+  position:fixed;
+  inset:0;
+  z-index:0;
 }
-canvas {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
+
+/* UI */
+#ui{
+  position:relative;
+  z-index:1;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
 }
-.wrapper {
-    position: relative;
-    z-index: 1;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    padding: 0 20px; /* Відступи зліва і справа */
+
+h1{
+  font-size:14px;
+  letter-spacing:3px;
+  opacity:.85;
 }
-.header {
-    text-align: center;
-    padding: 8px 4px;
-    background: #000;
-    flex-shrink: 0;
+
+#board{
+  width:360px;
+  box-shadow:0 0 40px rgba(120,180,255,.25);
 }
-.main-title {
-    font-size: clamp(16px, 3.5vw, 24px);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    text-shadow: 0 0 10px #ffcc00;
-    color: #ffffff; /* білий заголовок */
-    transition: all 0.3s ease;
+
+button{
+  background:transparent;
+  border:1px solid #2b425e;
+  color:#cfefff;
+  padding:6px 14px;
+  cursor:pointer;
+  font-size:12px;
 }
-.main-title:hover {
-    text-shadow: 0 0 30px #ffcc00;
-    transform: scale(1.04);
-}
-.content {
-    flex: 1;
-    padding: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    overflow-y: auto;
-}
-.row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-}
-.block {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    border-radius: 12px;
-    position: relative;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-}
-.block:hover { transform: scale(1.02); }
-.block img, .block video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    border-radius: 10px;
-}
-.red-gif img { filter: hue-rotate(0deg) saturate(1.6) brightness(1.1); }
-.blue-gif img { filter: hue-rotate(200deg) saturate(1.6) brightness(1.1); }
-.footer {
-    text-align: center;
-    padding: 6px 0;
-    background: #000;
-    flex-shrink: 0;
-    font-size: clamp(10px, 2.5vw, 12px);
-    opacity: 0.8;
-    letter-spacing: 0.05em;
-}
-@media (max-width: 768px) {
-    .content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-    .row { grid-template-columns: 1fr; }
+button:hover{
+  background:#0d1b2a;
 }
 </style>
 </head>
+
 <body>
+
 <canvas id="stars"></canvas>
-<div class="wrapper">
-    <div class="header">
-        <div class="main-title" onclick="window.open('https://t.me/ibonariumcosmodynamicslablive', '_blank')">
-            Ibonarium Cosmo Dynamics LAB LIVE
-        </div>
-    </div>
-    <div class="content">
 
-        <!-- Ряд зображень -->
-        <div class="row">
-            <div class="block red-gif">
-                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c2.gif" alt="LASCO C2" loading="lazy">
-            </div>
-            <div class="block">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0171.jpg" alt="AIA 171" loading="lazy">
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="block blue-gif">
-                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c3.gif" alt="LASCO C3" loading="lazy">
-            </div>
-            <div class="block">
-                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0193.jpg" alt="AIA 193" loading="lazy">
-            </div>
-        </div>
-
-        <!-- Відео-анімації -->
-        <div class="row">
-            <div class="block">
-                <video controls autoplay loop muted>
-                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0171_synoptic.mp4" type="video/mp4">
-                </video>
-            </div>
-            <div class="block">
-                <video controls autoplay loop muted>
-                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0193_synoptic.mp4" type="video/mp4">
-                </video>
-            </div>
-        </div>
-        <div class="row">
-            <div class="block">
-                <video controls autoplay loop muted>
-                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0211_synoptic.mp4" type="video/mp4">
-                </video>
-            </div>
-            <div class="block">
-                <video controls autoplay loop muted>
-                    <source src="https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/latest_1024_0304_synoptic.mp4" type="video/mp4">
-                </video>
-            </div>
-        </div>
-
-    </div>
-    <div class="footer">
-        sun.sun.sun/live/cosmodynamics.lab.live
-    </div>
+<div id="ui">
+  <h1>IBONARIUM · CHESS · HARD</h1>
+  <div id="board"></div>
+  <button onclick="resetGame()">Нова партія</button>
 </div>
 
 <script>
-// STARFIELD
+/* =======================
+   STAR FIELD (IBONARIUM)
+======================= */
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
-let W, H, stars = [];
-function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-    stars = Array.from({length: 180}, () => ({
-        x: Math.random()*W, y: Math.random()*H, z: Math.random()*W
-    }));
+let w,h,stars=[];
+
+function resize(){
+  w=canvas.width=window.innerWidth;
+  h=canvas.height=window.innerHeight;
 }
+window.addEventListener("resize",resize);
 resize();
-window.addEventListener("resize", resize);
-function render() {
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0,0,W,H);
-    ctx.fillStyle = "#4dd2ff";
-    stars.forEach(s => {
-        s.z -= 0.25;
-        if (s.z <= 0) s.z = W;
-        const k = 128 / s.z;
-        const x = (s.x - W/2) * k + W/2;
-        const y = (s.y - H/2) * k + H/2;
-        if (x>0 && x<W && y>0 && y<H) {
-            const size = (1 - s.z/W)*3;
-            ctx.fillRect(x,y,size,size);
-        }
-    });
-    requestAnimationFrame(render);
+
+for(let i=0;i<200;i++){
+  stars.push({
+    x:Math.random()*w,
+    y:Math.random()*h,
+    z:Math.random()*2+0.5,
+    r:Math.random()*1.5
+  });
 }
-render();
+
+function drawStars(){
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle="#fff";
+  stars.forEach(s=>{
+    s.y+=0.05*s.z;
+    if(s.y>h) s.y=0;
+    ctx.globalAlpha=0.4+s.z*0.3;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+drawStars();
+
+/* =======================
+   CHESS + STOCKFISH
+======================= */
+const game = new Chess();
+
+const board = Chessboard("board",{
+  draggable:true,
+  position:"start",
+  onDrop:onDrop
+});
+
+const engine = new Worker(
+  "https://cdn.jsdelivr.net/npm/stockfish/stockfish.js"
+);
+
+engine.postMessage("uci");
+engine.postMessage("setoption name Skill Level value 20");
+
+function onDrop(source,target){
+  const move = game.move({
+    from:source,
+    to:target,
+    promotion:"q"
+  });
+
+  if(move===null) return "snapback";
+  board.position(game.fen());
+  setTimeout(aiMove,300);
+}
+
+function aiMove(){
+  engine.postMessage("position fen " + game.fen());
+  engine.postMessage("go depth 18");
+}
+
+engine.onmessage = e=>{
+  if(e.data.startsWith("bestmove")){
+    const m=e.data.split(" ")[1];
+    game.move({
+      from:m.slice(0,2),
+      to:m.slice(2,4),
+      promotion:"q"
+    });
+    board.position(game.fen());
+  }
+};
+
+function resetGame(){
+  game.reset();
+  board.start();
+}
 </script>
+
 </body>
 </html>
