@@ -5,9 +5,7 @@
 <title>IBONARIUM · CHESS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html, body {
-  margin:0; padding:0; overflow:hidden; background:#000; font-family: monospace;
-}
+html, body { margin:0; padding:0; overflow:hidden; background:#000; font-family:monospace; }
 canvas { display:block; }
 #ui { position:absolute; top:12px; left:50%; transform:translateX(-50%); color:#cfefff; z-index:1; text-align:center; }
 button { margin-top:6px; background:transparent; border:1px solid #2b425e; color:#cfefff; padding:6px 12px; cursor:pointer; }
@@ -30,7 +28,7 @@ function resize(){ w=canvas.width=window.innerWidth; h=canvas.height=window.inne
 window.addEventListener("resize",resize);
 resize();
 
-/* ========= STAR FIELD ========= */
+/* ====== STAR FIELD ====== */
 const stars = [];
 for(let i=0;i<200;i++){
   stars.push({x:Math.random()*w, y:Math.random()*h, z:Math.random()*2+0.5, r:Math.random()*1.5});
@@ -45,7 +43,7 @@ function drawStars(){
   });
 }
 
-/* ========= CHESS ========= */
+/* ====== CHESS BOARD ====== */
 const boardSize = Math.min(w,h)*0.6;
 const square = boardSize/8;
 const boardX = (w-boardSize)/2;
@@ -56,12 +54,12 @@ const piecesUnicode = {
   'p':'♟','r':'♜','n':'♞','b':'♝','q':'♛','k':'♚',
   'P':'♙','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔'
 };
-let selected = null;
+let selected=null;
 
 function drawBoard(){
   for(let i=0;i<8;i++){
     for(let j=0;j<8;j++){
-      ctx.fillStyle = (i+j)%2===0?'#e6edf3':'#0d1117';
+      ctx.fillStyle=(i+j)%2===0?'#e6edf3':'#0d1117';
       ctx.fillRect(boardX+j*square, boardY+i*square, square, square);
     }
   }
@@ -72,10 +70,11 @@ function drawPieces(){
   ctx.textAlign="center"; ctx.textBaseline="middle";
   for(let i=0;i<8;i++){
     for(let j=0;j<8;j++){
-      const piece = game.get(String.fromCharCode(97+j)+(8-i));
+      const sq = String.fromCharCode(97+j)+(8-i);
+      const piece = game.get(sq);
       if(piece){
         ctx.fillStyle = piece.color==='w'?'#dbeafe':'#1f2937';
-        ctx.fillText(piecesUnicode[piece.type.toUpperCase()===piece.type?piece.type:piece.type.toLowerCase()], boardX+j*square+square/2, boardY+i*square+square/2);
+        ctx.fillText(piecesUnicode[piece.color==='w'?piece.type.toUpperCase():piece.type.toLowerCase()], boardX+j*square+square/2, boardY+i*square+square/2);
       }
     }
   }
@@ -88,24 +87,18 @@ function getSquare(x,y){
   return String.fromCharCode(97+file)+rank;
 }
 
-/* ========= MOUSE EVENTS ========= */
-canvas.addEventListener("mousedown", e=>{
-  const sq = getSquare(e.clientX,e.clientY);
-  if(sq){ selected=sq; }
-});
+/* ====== MOUSE ====== */
+canvas.addEventListener("mousedown", e=>{ const sq=getSquare(e.clientX,e.clientY); if(sq){selected=sq;} });
 canvas.addEventListener("mouseup", e=>{
   if(!selected) return;
   const target = getSquare(e.clientX,e.clientY);
   if(target){
     const move = game.move({from:selected,to:target,promotion:'q'});
-    if(move){
-      selected=null;
-      aiMove();
-    } else selected=null;
+    if(move){ selected=null; aiMove(); } else selected=null;
   }
 });
 
-/* ========= STOCKFISH ========= */
+/* ====== STOCKFISH ====== */
 const engine = new Worker("https://cdn.jsdelivr.net/npm/stockfish/stockfish.js");
 engine.postMessage("uci");
 engine.postMessage("setoption name Skill Level value 20");
@@ -114,24 +107,18 @@ function aiMove(){
   engine.postMessage("position fen "+game.fen());
   engine.postMessage("go depth 18");
 }
-
 engine.onmessage = e=>{
   if(e.data.startsWith("bestmove")){
-    const m=e.data.split(" ")[1];
-    game.move({from:m.slice(0,2), to:m.slice(2,4), promotion:'q'});
+    const m = e.data.split(" ")[1];
+    game.move({from:m.slice(0,2),to:m.slice(2,4),promotion:'q'});
   }
 };
 
-/* ========= RESET ========= */
+/* ====== RESET ====== */
 function resetGame(){ game.reset(); }
 
-/* ========= ANIMATION LOOP ========= */
-function animate(){
-  drawStars();
-  drawBoard();
-  drawPieces();
-  requestAnimationFrame(animate);
-}
+/* ====== ANIMATION LOOP ====== */
+function animate(){ drawStars(); drawBoard(); drawPieces(); requestAnimationFrame(animate); }
 animate();
 </script>
 </body>
