@@ -5,10 +5,31 @@
 <title>IBONARIUM · CHESS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html, body { margin:0; padding:0; overflow:hidden; background:#000; font-family:monospace; }
+html, body {
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  background:#000;
+  font-family:monospace;
+}
 canvas { display:block; }
-#ui { position:absolute; top:12px; left:50%; transform:translateX(-50%); color:#cfefff; z-index:1; text-align:center; }
-button { margin-top:6px; background:transparent; border:1px solid #2b425e; color:#cfefff; padding:6px 12px; cursor:pointer; }
+#ui {
+  position:absolute;
+  top:12px;
+  left:50%;
+  transform:translateX(-50%);
+  color:#cfefff;
+  z-index:1;
+  text-align:center;
+}
+button {
+  margin-top:6px;
+  background:transparent;
+  border:1px solid #2b425e;
+  color:#cfefff;
+  padding:6px 12px;
+  cursor:pointer;
+}
 button:hover { background:#0d1b2a; }
 </style>
 </head>
@@ -24,11 +45,14 @@ button:hover { background:#0d1b2a; }
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 let w,h;
-function resize(){ w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; }
+function resize(){
+  w=canvas.width=window.innerWidth;
+  h=canvas.height=window.innerHeight;
+}
 window.addEventListener("resize",resize);
 resize();
 
-/* ====== STAR FIELD ====== */
+/* ===== STAR FIELD ===== */
 const stars = [];
 for(let i=0;i<200;i++){
   stars.push({x:Math.random()*w, y:Math.random()*h, z:Math.random()*2+0.5, r:Math.random()*1.5});
@@ -43,12 +67,7 @@ function drawStars(){
   });
 }
 
-/* ====== CHESS BOARD ====== */
-const boardSize = Math.min(w,h)*0.6;
-const square = boardSize/8;
-const boardX = (w-boardSize)/2;
-const boardY = (h-boardSize)/2;
-
+/* ===== CHESS BOARD ===== */
 const game = new Chess();
 const piecesUnicode = {
   'p':'♟','r':'♜','n':'♞','b':'♝','q':'♛','k':'♚',
@@ -56,16 +75,26 @@ const piecesUnicode = {
 };
 let selected=null;
 
+function getBoardMetrics(){
+  const size=Math.min(w,h)*0.6;
+  const square=size/8;
+  const startX=(w-size)/2;
+  const startY=(h-size)/2;
+  return {size, square, startX, startY};
+}
+
 function drawBoard(){
+  const {square, startX, startY} = getBoardMetrics();
   for(let i=0;i<8;i++){
     for(let j=0;j<8;j++){
       ctx.fillStyle=(i+j)%2===0?'#e6edf3':'#0d1117';
-      ctx.fillRect(boardX+j*square, boardY+i*square, square, square);
+      ctx.fillRect(startX+j*square, startY+i*square, square, square);
     }
   }
 }
 
 function drawPieces(){
+  const {square, startX, startY} = getBoardMetrics();
   ctx.font = square*0.8+"px monospace";
   ctx.textAlign="center"; ctx.textBaseline="middle";
   for(let i=0;i<8;i++){
@@ -74,31 +103,33 @@ function drawPieces(){
       const piece = game.get(sq);
       if(piece){
         ctx.fillStyle = piece.color==='w'?'#dbeafe':'#1f2937';
-        ctx.fillText(piecesUnicode[piece.color==='w'?piece.type.toUpperCase():piece.type.toLowerCase()], boardX+j*square+square/2, boardY+i*square+square/2);
+        const symbol = piece.color==='w'?piece.type.toUpperCase():piece.type.toLowerCase();
+        ctx.fillText(piecesUnicode[symbol], startX+j*square+square/2, startY+i*square+square/2);
       }
     }
   }
 }
 
-function getSquare(x,y){
-  const file = Math.floor((x-boardX)/square);
-  const rank = 8-Math.floor((y-boardY)/square);
+function getSquareFromCoords(x,y){
+  const {square, startX, startY} = getBoardMetrics();
+  const file = Math.floor((x-startX)/square);
+  const rank = 8-Math.floor((y-startY)/square);
   if(file<0||file>7||rank<1||rank>8) return null;
   return String.fromCharCode(97+file)+rank;
 }
 
-/* ====== MOUSE ====== */
-canvas.addEventListener("mousedown", e=>{ const sq=getSquare(e.clientX,e.clientY); if(sq){selected=sq;} });
+/* ===== MOUSE EVENTS ===== */
+canvas.addEventListener("mousedown", e=>{ selected=getSquareFromCoords(e.clientX,e.clientY); });
 canvas.addEventListener("mouseup", e=>{
   if(!selected) return;
-  const target = getSquare(e.clientX,e.clientY);
+  const target=getSquareFromCoords(e.clientX,e.clientY);
   if(target){
-    const move = game.move({from:selected,to:target,promotion:'q'});
+    const move=game.move({from:selected,to:target,promotion:'q'});
     if(move){ selected=null; aiMove(); } else selected=null;
   }
 });
 
-/* ====== STOCKFISH ====== */
+/* ===== STOCKFISH ===== */
 const engine = new Worker("https://cdn.jsdelivr.net/npm/stockfish/stockfish.js");
 engine.postMessage("uci");
 engine.postMessage("setoption name Skill Level value 20");
@@ -107,18 +138,23 @@ function aiMove(){
   engine.postMessage("position fen "+game.fen());
   engine.postMessage("go depth 18");
 }
-engine.onmessage = e=>{
+engine.onmessage=e=>{
   if(e.data.startsWith("bestmove")){
-    const m = e.data.split(" ")[1];
-    game.move({from:m.slice(0,2),to:m.slice(2,4),promotion:'q'});
+    const m=e.data.split(" ")[1];
+    game.move({from:m.slice(0,2), to:m.slice(2,4), promotion:'q'});
   }
 };
 
-/* ====== RESET ====== */
+/* ===== RESET ===== */
 function resetGame(){ game.reset(); }
 
-/* ====== ANIMATION LOOP ====== */
-function animate(){ drawStars(); drawBoard(); drawPieces(); requestAnimationFrame(animate); }
+/* ===== ANIMATION LOOP ===== */
+function animate(){
+  drawStars();
+  drawBoard();
+  drawPieces();
+  requestAnimationFrame(animate);
+}
 animate();
 </script>
 </body>
