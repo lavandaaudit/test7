@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>GEOMETRIC CHAOS · VECTOR FIELD</title>
+<title>GEOMETRIC CHAOS · CORE WAVES</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 html, body {
@@ -49,7 +49,7 @@ canvas { display:block; }
 </head>
 <body>
 
-<div id="hud">GEOMETRIC CHAOS · VECTOR FIELD</div>
+<div id="hud">GEOMETRIC CHAOS · CORE WAVES</div>
 <div id="status"></div>
 <div id="data">ініціалізація…</div>
 <div id="clock">—</div>
@@ -156,52 +156,39 @@ async function fetchRealPlanetData(){
 fetchRealPlanetData();
 setInterval(fetchRealPlanetData,120000);
 
-/* ===== ГЕОМЕТРИЧНИЙ ФОН · VECTOR FIELD ===== */
-let t=0;
+/* ===== СУЧАСНА ХВИЛЬОВА ГЕОМЕТРІЯ · CORE ===== */
+let t = 0;
 function drawGeometry(){
-  const w=canvas.width, h=canvas.height;
-  const chaos=realData.chaos;
+  const w = canvas.width;
+  const h = canvas.height;
+  const cx = w/2, cy = h/2;
+  const chaos = realData.chaos;
 
-  ctx.fillStyle='rgba(5,7,10,0.25)';
+  ctx.fillStyle = 'rgba(5,7,10,0.16)';
   ctx.fillRect(0,0,w,h);
 
-  const grid=46;
-  const sx=w/grid, sy=h/grid;
+  const layers = 8;
+  for(let l=0;l<layers;l++){
+    const points = 160;
+    const baseR = 60 + l*28;
+    const waveAmp = 6 + chaos*22;
+    const speed = 0.18 + l*0.03;
 
-  ctx.lineWidth=1;
-  ctx.strokeStyle=`hsla(${190+chaos*90},80%,55%,${0.15+chaos*0.35})`;
-
-  for(let y=0;y<=grid;y++){
-    for(let x=0;x<=grid;x++){
-      const px=x*sx, py=y*sy;
-      const a=
-        Math.sin(x*0.6+t*0.8)+
-        Math.cos(y*0.6-t*0.7)+
-        chaos*Math.sin((x+y)*0.4);
-      const ang=a*Math.PI*0.5;
-      const len=10+chaos*40;
-      ctx.beginPath();
-      ctx.moveTo(px,py);
-      ctx.lineTo(px+Math.cos(ang)*len, py+Math.sin(ang)*len);
-      ctx.stroke();
-    }
-  }
-
-  const cx=w/2, cy=h/2;
-  for(let r=1;r<=4;r++){
-    const sides=6+Math.floor(chaos*10);
-    const rad=r*90+Math.sin(t+r)*30;
     ctx.beginPath();
-    for(let i=0;i<=sides;i++){
-      const ang=i*(Math.PI*2/sides)+t*0.2*r;
-      const mod=1+Math.sign(Math.sin(i+t*2))*chaos*0.35;
-      const x=cx+Math.cos(ang)*rad*mod;
-      const y=cy+Math.sin(ang)*rad*mod;
-      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    for(let i=0;i<=points;i++){
+      const a = i * (Math.PI*2/points);
+      const wave =
+        Math.sin(a*3 + t*speed) +
+        Math.cos(a*2 - t*0.6) +
+        Math.sin(t + l);
+      const r = baseR + wave * waveAmp;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
     }
     ctx.closePath();
-    ctx.strokeStyle=`hsla(${160+r*40+chaos*60},70%,${40+r*5}%,${0.18+chaos*0.3})`;
-    ctx.lineWidth=1.2+chaos*1.8;
+    ctx.strokeStyle = `hsla(${180+l*28+chaos*70},85%,${42+l*2}%,${0.10+chaos*0.22})`;
+    ctx.lineWidth = 0.9 + chaos*1.4;
     ctx.stroke();
   }
 }
@@ -242,7 +229,7 @@ function drawGraph(){
 
 /* ===== цикл ===== */
 function loop(){
-  t+=0.016;
+  t += 0.016;
   drawGeometry();
   drawGraph();
   requestAnimationFrame(loop);
