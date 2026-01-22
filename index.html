@@ -14,7 +14,6 @@ html, body {
   color:#7fd6ff;
 }
 canvas { display:block; }
-
 #hud {
   position:absolute;
   top:14px; left:16px;
@@ -39,7 +38,6 @@ canvas { display:block; }
 #data .real { color:#5dff9c; font-weight:bold; }
 #data .fallback { color:#666; }
 #data .warning { color:#ffd84d; }
-
 #clock {
   position:absolute;
   bottom:16px; right:16px;
@@ -49,8 +47,8 @@ canvas { display:block; }
 }
 </style>
 </head>
-
 <body>
+
 <div id="hud">GEOMETRIC CHAOS · VECTOR FIELD</div>
 <div id="status"></div>
 <div id="data">ініціалізація…</div>
@@ -99,7 +97,7 @@ let realData={
 let history={}; Object.keys(realData).forEach(k=>history[k]=[]);
 let sources={};
 
-/* ===== fetch (без змін) ===== */
+/* ===== fetch (БЕЗ ЗМІН) ===== */
 async function fetchRealPlanetData(){
   statusDiv.innerHTML='оновлення…';
   let loaded=0;
@@ -115,7 +113,6 @@ async function fetchRealPlanetData(){
       loaded+=5;
       sources.atmosphere_temp=sources.atmosphere_wind=sources.atmosphere_pressure=sources.precipitation=sources.solar_radiation=true;
     }
-
     const eq=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson');
     if(eq.ok){
       const f=(await eq.json()).features||[];
@@ -123,7 +120,6 @@ async function fetchRealPlanetData(){
       realData.seismic=Math.min(1,(f.length/30)+(max/10)*.5);
       loaded++; sources.seismic=true;
     }
-
     const proxy='https://corsproxy.io/?';
     try{
       const s=await fetch(proxy+encodeURIComponent('https://services.swpc.noaa.gov/products/geospace/planetary-k-index-1-minute.json'));
@@ -133,14 +129,12 @@ async function fetchRealPlanetData(){
         loaded++; sources.magnetic=true;
       }
     }catch{}
-
     Object.keys(realData).forEach(k=>{
       if(k!=='chaos'){
         history[k].push(realData[k]);
         if(history[k].length>90) history[k].shift();
       }
     });
-
     const vars=Object.values(history).map(h=>{
       if(h.length<2) return 0;
       const m=h.reduce((a,b)=>a+b,0)/h.length;
@@ -162,35 +156,57 @@ async function fetchRealPlanetData(){
 fetchRealPlanetData();
 setInterval(fetchRealPlanetData,120000);
 
-/* ===== геометричний фон ===== */
+/* ===== ГЕОМЕТРИЧНИЙ ФОН · VECTOR FIELD ===== */
 let t=0;
 function drawGeometry(){
-  const cx=canvas.width/2, cy=canvas.height/2;
+  const w=canvas.width, h=canvas.height;
   const chaos=realData.chaos;
 
-  ctx.fillStyle='rgba(5,7,10,0.18)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='rgba(5,7,10,0.25)';
+  ctx.fillRect(0,0,w,h);
 
-  const layers=6;
-  for(let l=0;l<layers;l++){
-    const count=40+l*10;
-    const r=120+l*70+Math.sin(t+l)*40;
+  const grid=46;
+  const sx=w/grid, sy=h/grid;
+
+  ctx.lineWidth=1;
+  ctx.strokeStyle=`hsla(${190+chaos*90},80%,55%,${0.15+chaos*0.35})`;
+
+  for(let y=0;y<=grid;y++){
+    for(let x=0;x<=grid;x++){
+      const px=x*sx, py=y*sy;
+      const a=
+        Math.sin(x*0.6+t*0.8)+
+        Math.cos(y*0.6-t*0.7)+
+        chaos*Math.sin((x+y)*0.4);
+      const ang=a*Math.PI*0.5;
+      const len=10+chaos*40;
+      ctx.beginPath();
+      ctx.moveTo(px,py);
+      ctx.lineTo(px+Math.cos(ang)*len, py+Math.sin(ang)*len);
+      ctx.stroke();
+    }
+  }
+
+  const cx=w/2, cy=h/2;
+  for(let r=1;r<=4;r++){
+    const sides=6+Math.floor(chaos*10);
+    const rad=r*90+Math.sin(t+r)*30;
     ctx.beginPath();
-    for(let i=0;i<count;i++){
-      const a=i*(Math.PI*2/count)+t*(.15+l*.03);
-      const mod=1+Math.sin(t*2+i*.4)*chaos*.6;
-      const x=cx+Math.cos(a)*r*mod;
-      const y=cy+Math.sin(a)*r*mod;
+    for(let i=0;i<=sides;i++){
+      const ang=i*(Math.PI*2/sides)+t*0.2*r;
+      const mod=1+Math.sign(Math.sin(i+t*2))*chaos*0.35;
+      const x=cx+Math.cos(ang)*rad*mod;
+      const y=cy+Math.sin(ang)*rad*mod;
       i?ctx.lineTo(x,y):ctx.moveTo(x,y);
     }
     ctx.closePath();
-    ctx.strokeStyle=`hsla(${180+l*35+chaos*80},80%,${45+l*3}%,${0.12+chaos*0.25})`;
-    ctx.lineWidth=1.1+realData.magnetic*2;
+    ctx.strokeStyle=`hsla(${160+r*40+chaos*60},70%,${40+r*5}%,${0.18+chaos*0.3})`;
+    ctx.lineWidth=1.2+chaos*1.8;
     ctx.stroke();
   }
 }
 
-/* ===== лівий графік (без змін логіки) ===== */
+/* ===== лівий графік (БЕЗ ЗМІН) ===== */
 function drawGraph(){
   const margin=40, width=200, height=canvas.height-80;
   ctx.strokeStyle='#7fd6ff';
